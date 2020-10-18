@@ -12,69 +12,102 @@ recovtime_se <- sd(databp$recovtime, na.rm = TRUE)/sqrt(length(ind_obs))
 databp_cc <- databp[complete.cases(databp), ]
 
 # find pearson correlation
-recovtime_dose_Pcorr <- cor(databp_cc$recovtime, exp(databp_cc$logdose), method = 'pearson')
-recovtime_blood_Pcorr <- cor(databp_cc$recovtime, databp_cc$bloodp, method = 'pearson')
+recovtime_dose_Pcorr <- cor(databp_cc$recovtime, databp_cc$logdose, 
+                            method = 'pearson')
+recovtime_blood_Pcorr <- cor(databp_cc$recovtime, databp_cc$bloodp, 
+                             method = 'pearson')
 # return required values for Q4a
 recovtime_mean; recovtime_se; recovtime_dose_Pcorr; recovtime_blood_Pcorr 
 
 # Q4b: use mean imputation
 # replace NAs with recovery time mean
-recovtime_mi <- ifelse(is.na(databp$recovtime) == TRUE, recovtime_mean, databp$recovtime)
+recovtime_mi <- ifelse(is.na(databp$recovtime) == TRUE, recovtime_mean, 
+                       databp$recovtime)
 # find mean of recovery time and its standard error, pearson correlation
 recovtime_mi_mean <- mean(recovtime_mi)
 recovtime_mi_se <- sd(recovtime_mi)/sqrt(length(recovtime_mi))
-recovtime_mi_dose_Pcorr <- cor(recovtime_mi, exp(databp$logdose), method = 'pearson')
-recovtime_mi_blood_Pcorr <- cor(recovtime_mi, databp$bloodp, method = 'pearson')
+recovtime_mi_dose_Pcorr <- cor(recovtime_mi, databp$logdose, 
+                               method = 'pearson')
+recovtime_mi_blood_Pcorr <- cor(recovtime_mi, databp$bloodp, 
+                                method = 'pearson')
 # return required values for Q4b
-recovtime_mi_mean; recovtime_mi_se; recovtime_mi_dose_Pcorr; recovtime_mi_blood_Pcorr 
+recovtime_mi_mean; recovtime_mi_se; recovtime_mi_dose_Pcorr; 
+recovtime_mi_blood_Pcorr 
 
 # Q4c: mean regression imputation
-fit_recovtime <- lm(databp$recovtime ~  databp$bloodp + databp$logdose , data = databp)
+set.seed(1)
+fit_recovtime <- lm(databp$recovtime ~  databp$bloodp + databp$logdose , 
+                    data = databp)
+
+# check validity of models assumption: linearity and homoscedasticity
+plot(fit_recovtime$fitted.values, residuals(fit_recovtime), 
+     xlab = 'Fitted values', ylab = 'Residuals')
+# Informally we can say that the assumptions are met because there is no pattern visible.
+
 # compute predicted values
 pred_recovtime_ri <- predict(fit_recovtime, newdata = databp)
 # replace NAs with predicted values
-recovtime_ri <- ifelse(is.na(databp$recovtime) == TRUE, pred_recovtime_ri, databp$recovtime)
+recovtime_ri <- ifelse(is.na(databp$recovtime) == TRUE, pred_recovtime_ri, 
+                       databp$recovtime)
 recovtime_ri_mean <- mean(recovtime_ri)
 recovtime_ri_se <- sd(recovtime_ri)/sqrt(length(recovtime_ri))
-recovtime_ri_dose_Pcorr <- cor(recovtime_ri, exp(databp$logdose), method = 'pearson')
+recovtime_ri_dose_Pcorr <- cor(recovtime_ri, databp$logdose, method = 'pearson')
 recovtime_ri_blood_Pcorr <- cor(recovtime_ri, databp$bloodp, method = 'pearson')
 # return required values for Q4c
-recovtime_ri_mean; recovtime_ri_se; recovtime_ri_dose_Pcorr; recovtime_ri_blood_Pcorr
+recovtime_ri_mean; recovtime_ri_se; recovtime_ri_dose_Pcorr; 
+recovtime_ri_blood_Pcorr
 
 # Q4d: stochastic regression imputation
-pred_recovtime_sri <- predict(fit_recovtime, newdata = databp) + rnorm(n = length(ind_obs), 0,
-                                                                       summary(fit_recovtime)$sigma)
-recovtime_sri <- ifelse(is.na(databp$recovtime) == TRUE, pred_recovtime_sri, databp$recovtime)
+set.seed(1)
+pred_recovtime_sri <- predict(fit_recovtime, newdata = databp) + 
+  rnorm(n = length(ind_obs), 0, summary(fit_recovtime)$sigma)
+recovtime_sri <- ifelse(is.na(databp$recovtime) == TRUE, 
+                        pred_recovtime_sri, databp$recovtime)
 recovtime_sri_mean <- mean(recovtime_sri)
 recovtime_sri_se <- sd(recovtime_sri)/sqrt(length(recovtime_sri))
-recovtime_sri_dose_Pcorr <- cor(recovtime_sri, exp(databp$logdose), method = 'pearson')
-recovtime_sri_blood_Pcorr <- cor(recovtime_sri, databp$bloodp, method = 'pearson')
-# return required values for Q4c
-recovtime_sri_mean; recovtime_sri_se; recovtime_sri_dose_Pcorr; recovtime_sri_blood_Pcorr
+recovtime_sri_dose_Pcorr <- cor(recovtime_sri, databp$logdose, 
+                                method = 'pearson')
+recovtime_sri_blood_Pcorr <- cor(recovtime_sri, databp$bloodp, 
+                                 method = 'pearson')
+# return required values for Q4d
+recovtime_sri_mean; recovtime_sri_se; recovtime_sri_dose_Pcorr; 
+recovtime_sri_blood_Pcorr
+
 
 
 # Q4e: predictive mean matching
+set.seed(1)
 # re-use fit_recovtime and vector of predicted values (recovtime_ri) from Q4c
 # locations of missing values
 ind_miss <- which(is.na(databp$recovtime) == TRUE)
+
 # extract predicted values for NAs (NAs are at position 4, 10, 22)
 pred_miss_value1 <- pred_recovtime_ri[[4]]
 pred_miss_value2 <- pred_recovtime_ri[[10]]
 pred_miss_value3 <- pred_recovtime_ri[[22]]
+
 # pred_recovtime_ri with dropped NAs to ensure we get a nonempty answer
-pred_recovtime_ri_NA <- ifelse(is.na(databp$recovtime) == TRUE, NA, pred_recovtime_ri)
+pred_recovtime_ri_NA <- ifelse(is.na(databp$recovtime) == TRUE, NA, 
+                               pred_recovtime_ri)
 pred_recovtime_ri_NA_dropped <- na.omit(pred_recovtime_ri_NA)
-# find donor from NA dropped list: values with predicted value closest to prediction of NA predicted value
-donor1 <- which((pred_recovtime_ri_NA_dropped - pred_miss_value1)^2 == min((pred_recovtime_ri_NA_dropped 
-                                                                                  - pred_miss_value1)^2))
-donor2 <- which((pred_recovtime_ri_NA_dropped - pred_miss_value2)^2 == min((pred_recovtime_ri_NA_dropped 
-                                                                                  - pred_miss_value2)^2))
-donor3 <- which((pred_recovtime_ri_NA_dropped - pred_miss_value3)^2 == min((pred_recovtime_ri_NA_dropped 
-                                                                                  - pred_miss_value3)^2))
-# return predicted values of donors 
-donor1_value <- pred_recovtime_ri_NA_dropped[[donor1]]
-donor2_value <- pred_recovtime_ri_NA_dropped[[donor2]]
-donor3_value <- pred_recovtime_ri_NA_dropped[[donor3]]
+
+# find donor from NA dropped list: values with predicted value 
+# closest to prediction of NA predicted value
+donor1_ri_NA <- which((pred_recovtime_ri_NA_dropped - pred_miss_value1)^2 
+                      == min((pred_recovtime_ri_NA_dropped - pred_miss_value1)^2))
+donor2_ri_NA <- which((pred_recovtime_ri_NA_dropped - pred_miss_value2)^2 
+                      == min((pred_recovtime_ri_NA_dropped - pred_miss_value2)^2))
+donor3_ri_NA <- which((pred_recovtime_ri_NA_dropped - pred_miss_value3)^2 
+                      == min((pred_recovtime_ri_NA_dropped 
+- pred_miss_value3)^2))
+# now the problem is that since I dropped the NAs in vector, 
+# the indices of pred_recovtime_ri_NA and recovtime are not the same
+# drop NAs from recovtime to get the same indices
+
+recovtime_noNAs <- na.omit(databp$recovtime)
+donor1_value <- recovtime_noNAs[[donor1_ri_NA]]
+donor2_value <- recovtime_noNAs[[donor2_ri_NA]]
+donor3_value <- recovtime_noNAs[[donor3_ri_NA]]
 # put them in a list
 list_donor_values <- c(donor1_value, donor2_value, donor3_value)
 
@@ -85,7 +118,10 @@ recovtime_pmm <- replace(recovtime_pmm, is.na(recovtime_pmm), list_donor_values)
 # do the analyis
 recovtime_pmm_mean <- mean(recovtime_pmm)
 recovtime_pmm_se <- sd(recovtime_pmm)/sqrt(length(recovtime_pmm))
-recovtime_pmm_dose_Pcorr <- cor(recovtime_pmm, exp(databp$logdose), method = 'pearson')
-recovtime_pmm_blood_Pcorr <- cor(recovtime_pmm, databp$bloodp, method = 'pearson')
+recovtime_pmm_dose_Pcorr <- cor(recovtime_pmm, databp$logdose, 
+                                method = 'pearson')
+recovtime_pmm_blood_Pcorr <- cor(recovtime_pmm, databp$bloodp, 
+                                 method = 'pearson')
 # return values
-recovtime_pmm_mean; recovtime_pmm_se; recovtime_pmm_dose_Pcorr; recovtime_pmm_blood_Pcorr
+recovtime_pmm_mean; recovtime_pmm_se; recovtime_pmm_dose_Pcorr; 
+recovtime_pmm_blood_Pcorr
