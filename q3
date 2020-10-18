@@ -27,7 +27,8 @@ plot(density(Y2), lwd =2, col = 'blue', xlab = expression(Y[2]),
 lines(density(Y2_obs), lwd = 2, col= 'red')
 lines(density(Y2_miss), lwd = 2, col= 'pink')
 legend(6, 0.4, legend = c('Complete data', 'Observed data', 'Missing data'), 
-       col = c('blue', 'red', 'pink'), lty = c(1,1,1), lwd = c(2,2,2), bty = 'n')
+       col = c('blue', 'red', 'pink'), lty = c(1,1,1), 
+       lwd = c(2,2,2), bty = 'n')
 
 # b)
 # impute missing values using stochastic regression imputation
@@ -38,11 +39,16 @@ dataset_Y2miss <- data.frame(Y1, Y2m)
 fitY2 <- lm(Y2m ~ Y1, data = dataset_Y2miss)
 summary(fitY2)
 # check validity of models assumption: linearity and homoscedasticity
-plot(fitY2$fitted.values, residuals(Y2m), xlab = 'Fitted values', ylab = 'Residuals')
+plot(fitY2$fitted.values, residuals(fitY2), xlab = 'Fitted values', 
+     ylab = 'Residuals')
+# Informally we can say that the assumptions are met because 
+# there is no pattern visible. 
 
 set.seed(1)
-predY2sri <- predict(fitY2, newdata = dataset_Y2miss) + rnorm(n, mean = 0, summary(fitY2)$sigma)
-Y2sri <- ifelse(is.na(dataset_Y2miss$Y2m) == TRUE, predY2sri, dataset_Y2miss$Y2m)
+predY2sri <- predict(fitY2, newdata = dataset_Y2miss) 
+        + rnorm(n, mean = 0, summary(fitY2)$sigma)
+Y2sri <- ifelse(is.na(dataset_Y2miss$Y2m) == TRUE, 
+                predY2sri, dataset_Y2miss$Y2m)
 
 # plot the densities
 plot(density(Y2), lwd =2, col = 'blue', xlab = expression(Y[2]), 
@@ -52,6 +58,7 @@ legend(2, 0.3, legend = c('Complete data', 'Data with imputed values'),
        col = c('blue', 'red'), lty = c(1,1,1), lwd = c(2,2,2), bty = 'n')
 
 # c)
+set.seed(1)
 # Impose missingness on Y2 by considering a=0 and b=2
 Y2_calc_c <- 0*(Y1 - 1) + 2*(Y2 - 5) + Z3
 ind_miss_c <- which(Y2_calc_c < 0)
@@ -68,18 +75,25 @@ legend(6, 0.4, legend = c('Complete data', 'Observed data', 'Missing data'),
 
 
 # d)
+set.seed(1)
 # impute missing values using stochastic regression imputation
-# create another new dataset with Y2 missing according to new missingness, Y1 observed
+# create another new dataset with Y2 missing according 
+# to new missingness, Y1 observed
 Y2mc <- Y2
 Y2mc <- ifelse(Y2_calc_c < 0 , NA, Y2) 
 dataset_Y2miss_c <- data.frame(Y1, Y2mc)
 fitY2c <- lm(Y2mc ~ Y1 , data = dataset_Y2miss_c)
 summary(fitY2c)
 # check validity of models assumption: linearity and homoscedasticity
-# plot(fitY2$fitted.values, residuals(Y2m), xlab = 'Fitted values', ylab = 'Residuals')
+plot(fitY2c$fitted.values, residuals(fitY2c), 
+     xlab = 'Fitted values', ylab = 'Residuals')
+# Informally we can say that the assumptions are met
+# because there is no pattern visible.
 
-predY2csri <- predict(fitY2c, newdata = dataset_Y2miss_c) + rnorm(n, 0, summary(fitY2c)$sigma)
-Y2csri <- ifelse(is.na(dataset_Y2miss_c$Y2mc) == TRUE, predY2csri, complete_dataset$Y2)
+predY2csri <- predict(fitY2c, newdata = dataset_Y2miss_c) 
+        + rnorm(n, 0, summary(fitY2c)$sigma)
+Y2csri <- ifelse(is.na(dataset_Y2miss_c$Y2mc) == TRUE, 
+                 predY2csri, complete_dataset$Y2)
 
 # plot the densities
 plot(density(Y2), lwd =2, col = 'blue', xlab = expression(Y[2]), 
@@ -87,5 +101,7 @@ plot(density(Y2), lwd =2, col = 'blue', xlab = expression(Y[2]),
 lines(density(Y2csri), lwd = 2, col= 'red')
 legend(2, 0.4, legend = c('Complete data', 'Data with imputed values'), 
        col = c('blue', 'red'), lty = c(1,1,1), lwd = c(2,2,2), bty = 'n')
+
+
 
 
